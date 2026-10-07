@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Image Optimizer & Converter</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; margin: 0; padding: 30px 15px; color: #333; }
+        .container { max-width: 750px; margin: 0 auto; background: white; padding: 35px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        h1 { margin-top: 0; color: #1a73e8; text-align: center; font-size: 28px; }
+        p.subtitle { text-align: center; color: #666; font-size: 15px; margin-bottom: 25px; }
+
+        .dropzone { border: 2px dashed #1a73e8; border-radius: 12px; padding: 35px; background: #f8fbff; text-align: center; cursor: pointer; transition: 0.2s; position: relative; margin-bottom: 20px; }
+        .dropzone:hover { background: #edf5ff; border-color: #0b57d0; }
+        .dropzone input { opacity: 0; position: absolute; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer; }
+
+        .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #444; }
+        select, input[type="number"] { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; outline: none; }
+
+        .btn { width: 100%; background: #1a73e8; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:hover { background: #1557b0; }
+        .btn:disabled { background: #9bbdff; cursor: not-allowed; }
+
+        .loader { display: none; margin: 25px auto; border: 4px solid #f3f3f3; border-top: 4px solid #1a73e8; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Stats Badge */
+        #result-box { display: none; margin-top: 30px; padding-top: 25px; border-top: 1px solid #eee; text-align: center; }
+        .stats-badge { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; padding: 12px 20px; border-radius: 30px; display: inline-block; font-weight: bold; font-size: 15px; margin-bottom: 20px; }
+
+        /* Before/After Visual Comparison */
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .img-card { border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; background: #fafafa; }
+        .img-card h4 { margin: 5px 0 10px; font-size: 14px; color: #555; }
+        .img-card img { width: 100%; height: 180px; object-fit: contain; border-radius: 6px; background: #fff; }
+        .size-info { font-size: 13px; font-weight: 600; color: #333; margin-top: 8px; }
+
+        .download-btn { display: block; width: 100%; background: #28a745; color: white; text-decoration: none; padding: 15px; border-radius: 8px; font-weight: bold; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .download-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>⚡ Pro Image Optimizer</h1>
+        <p class="subtitle">Compress, Resize & Convert Images Instantaneously</p>
+
+        <form id="upload-form">
+            <div class="dropzone">
+                <span id="dropzone-text">📁 Click or Drag & Drop Image Here</span>
+                <input type="file" id="file-input" name="file" accept="image/*" required>
+            </div>
+
+            <div class="grid-options">
+                <div>
+                    <label for="quality">Compression Level:</label>
+                    <select name="quality" id="quality">
+                        <option value="80">Light (Best Quality)</option>
+                        <option value="50" selected>Balanced (Recommended)</option>
+                        <option value="20">High (Maximum Compression)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="format">Output Format:</label>
+                    <select name="format" id="format">
+                        <option value="JPEG" selected>JPG / JPEG</option>
+                        <option value="PNG">PNG</option>
+                        <option value="WEBP">WebP (Modern Format)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-options">
+                <div>
+                    <label for="width">Max Width (px, Optional):</label>
+                    <input type="number" name="width" id="width" placeholder="e.g. 1920 (Auto-scale)">
+                </div>
+                <div>
+                    <label for="height">Max Height (px, Optional):</label>
+                    <input type="number" name="height" id="height" placeholder="e.g. 1080 (Auto-scale)">
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Process & Compress Image</button>
+        </form>
+
+        <div class="loader" id="loader"></div>
+
+        <!-- Before & After Comparison -->
+        <div id="result-box">
+            <div class="stats-badge" id="stats-text">🎉 Reduced by 0%</div>
+
+            <div class="comparison-grid">
+                <div class="img-card">
+                    <h4>BEFORE (Original)</h4>
+                    <img id="orig-preview" src="" alt="Original Preview">
+                    <div class="size-info" id="orig-size">Size: -</div>
+                </div>
+                <div class="img-card">
+                    <h4>AFTER (Compressed)</h4>
+                    <img id="comp-preview" src="" alt="Compressed Preview">
+                    <div class="size-info" id="comp-size">Size: -</div>
+                </div>
+            </div>
+
+            <a id="download-link" class="download-btn" href="#" download>⬇️ Download Optimized Image</a>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropzoneText = document.getElementById('dropzone-text');
+        const form = document.getElementById('upload-form');
+        const loader = document.getElementById('loader');
+        const submitBtn = document.getElementById('submit-btn');
+        const resultBox = document.getElementById('result-box');
+        const origPreview = document.getElementById('orig-preview');
+        const compPreview = document.getElementById('comp-preview');
+        const origSizeText = document.getElementById('orig-size');
+        const compSizeText = document.getElementById('comp-size');
+        const statsText = document.getElementById('stats-text');
+        const downloadLink = document.getElementById('download-link');
+
+        let originalFileObj = null;
+
+        fileInput.addEventListener('change', () => {
+            if(fileInput.files.length > 0) {
+                originalFileObj = fileInput.files[0];
+                dropzoneText.innerHTML = "✅ Selected: <b>" + originalFileObj.name + "</b>";
+                origPreview.src = URL.createObjectURL(originalFileObj);
+                origSizeText.innerText = "Size: " + (originalFileObj.size / 1024).toFixed(1) + " KB";
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!originalFileObj) return;
+
+            const formData = new FormData(form);
+            loader.style.display = 'block';
+            submitBtn.disabled = true;
+            resultBox.style.display = 'none';
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if(!response.ok) throw new Error('Processing failed');
+
+                const blob = await response.blob();
+                const compressedUrl = URL.createObjectURL(blob);
+                
+                compPreview.src = compressedUrl;
+                downloadLink.href = compressedUrl;
+                
+                const selectedFormat = document.getElementById('format').value.toLowerCase();
+                downloadLink.download = "optimized_" + originalFileObj.name.split('.')[0] + "." + (selectedFormat === 'jpeg' ? 'jpg' : selectedFormat);
+
+                const compSizeKB = (blob.size / 1024).toFixed(1);
+                compSizeText.innerText = "Size: " + compSizeKB + " KB";
+
+                const origSizeKB = (originalFileObj.size / 1024);
+                const savedPercent = Math.max(0, (((origSizeKB - compSizeKB) / origSizeKB) * 100)).toFixed(1);
+
+                statsText.innerText = `🎉 Reduced by ${savedPercent}% (${(origSizeKB - compSizeKB).toFixed(1)} KB Saved)`;
+
+                resultBox.style.display = 'block';
+            } catch (err) {
+                alert('Compression failed. Please try a different image.');
+            } finally {
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+
+</body>
+</html>
